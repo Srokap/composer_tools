@@ -1,0 +1,26 @@
+{
+    "name": "srokap/composer_tools",
+    "description": "Provides tools useful for using composer with elgg plugins.",
+    "version": "1.0-dev",
+    "type": "elgg-plugin",
+    "keywords": [
+        "elgg",
+        "plugin"
+    ],
+    "homepage": "https://github.com/Srokap/composer_tools",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Pawe\u0142 Sroka",
+            "homepage": "https://github.com/Srokap/composer_tools",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/Srokap/composer_tools/issues",
+        "source": "https://github.com/Srokap/composer_tools"
+    },
+    "require": {
+
+    }
+}
