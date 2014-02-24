@@ -21,6 +21,6 @@
         "source": "https://github.com/Srokap/composer_tools"
     },
     "require": {
-
+        "composer/installers": ">=1.0.8"
     }
 }

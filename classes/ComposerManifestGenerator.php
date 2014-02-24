@@ -94,7 +94,10 @@ class ComposerManifestGenerator {
 				'issues' => $manifest->getBugTrackerURL(),
 				'source' => $manifest->getRepositoryURL(),
 			),
-			'require' => new stdClass(),//TODO figure out core version requirement handling
+			'require' => (object)array(
+				"composer/installers" => ">=1.0.8",
+				//TODO figure out core version requirement handling
+			),
 		);
 
 
