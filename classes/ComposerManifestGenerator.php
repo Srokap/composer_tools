@@ -62,6 +62,7 @@ class ComposerManifestGenerator {
 			MIT
 		 */
 		$replacements = array(
+			'GNU Public License version 2' => 'GPL-2.0',
 			'GNU General Public License version 2' => 'GPL-2.0',
 			'MIT (X11)' => 'MIT',
 		);
