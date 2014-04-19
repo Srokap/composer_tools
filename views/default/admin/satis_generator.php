@@ -62,8 +62,15 @@ function guessName($release, &$type)
 				$stat = $zip->statIndex($i);
 				if (basename($stat['name']) == 'manifest.xml') {
 					$dirname = trim(pathinfo($stat['name'], PATHINFO_DIRNAME), '/\\');
-					if (!empty($dirname) && strpos($dirname, '/') === false && strpos($dirname, '\\') === false) {
+					if (!empty($dirname) && $dirname !== '.' && strpos($dirname, '/') === false && strpos($dirname, '\\') === false) {
 						$resultDir = $dirname;
+//						var_dump($resultDir);
+						if (preg_match('#^([^\-]+)\-(.+)\-([0-9a-fA-F]{7}|master)$#', $resultDir, $matches)) {
+							$resultDir = $matches[2];
+//							var_dump('HIT', $matches[2]);
+						} else {
+//							var_dump('MISS');
+						}
 						$manifestsCnt++;
 						$stream = $zip->getStream($stat['name']);
 						if (is_resource($stream)) {
@@ -114,6 +121,28 @@ function getReleaseConfig(PluginRelease $release, PluginProject $pluginProject)
 		return false;
 	}
 
+	$versions = $release->elgg_version;
+	if (!is_array($versions) && $versions) {
+		$versions = array($versions);
+	}
+//	var_dump($versions);
+	//filter out invalid values like '1' for very old plugins
+	foreach ($versions as $key => $version) {
+		if (strlen($version) >= 3) {
+			$versions[$key] = '~' . $version;
+		} else {
+			unset($versions[$key]);
+		}
+	}
+//	var_dump('FILTERED', $versions);
+
+	$requires = array(
+		"composer/installers" => ">=1.0.8",
+	);
+	if (count($versions)) {
+		$requires['elgg/elgg'] = implode('|', $versions);
+	}
+
 	$arr = array(
 		'type' => 'package',
 		'package' => array(
@@ -133,18 +162,19 @@ function getReleaseConfig(PluginRelease $release, PluginProject $pluginProject)
 					"role" => "Maintainer"
 				)
 			),
-			"require" => array(
-				"composer/installers" => ">=1.0.8",
-			),
+			"require" => $requires,
 		),
 	);
 	return $arr;
 }
 
 
-$pluginProjects = new ElggBatch('elgg_get_entities', array(
+$pluginProjects = new ElggBatch('elgg_get_entities_from_access_id', array(
 	'type' => 'object',
 	'subtype' => 'plugin_project',
+	'access_id' => ACCESS_PUBLIC,
+//	'owner_guid' => 382631,//steve_clay
+//	'owner_guid' => 3,//Ben Werdmuller
 	'limit' => 0,
 ));
 
