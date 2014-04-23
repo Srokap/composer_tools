@@ -64,18 +64,16 @@ function guessName($release, &$type)
 					$dirname = trim(pathinfo($stat['name'], PATHINFO_DIRNAME), '/\\');
 					if (!empty($dirname) && $dirname !== '.' && strpos($dirname, '/') === false && strpos($dirname, '\\') === false) {
 						$resultDir = $dirname;
-//						var_dump($resultDir);
 						if (preg_match('#^([^\-]+)\-(.+)\-([0-9a-fA-F]{7}|master)$#', $resultDir, $matches)) {
 							$resultDir = $matches[2];
-//							var_dump('HIT', $matches[2]);
-						} else {
-//							var_dump('MISS');
+						} elseif (strpos($resultDir, '-' . $release->version) === strlen($resultDir)-strlen('-' . $release->version)) {
+							// cut away version appended by git
+							$resultDir = substr($resultDir, 0, strlen($resultDir)-strlen('-' . $release->version));
 						}
 						$manifestsCnt++;
 						$stream = $zip->getStream($stat['name']);
 						if (is_resource($stream)) {
 							$content = stream_get_contents($stream);
-//							var_dump($content);
 							try {
 								$manifest = new ElggPluginManifest($content);
 								$manifestArr = $manifest->getManifest();
@@ -83,12 +81,9 @@ function guessName($release, &$type)
 									$resultId = $manifestArr['id'];
 								}
 							} catch (Exception $e) {
-//								var_dump('ERROR: ' . $e->getMessage());
-//								return false;
 							}
 						}
 					}
-//					var_dump($stat['name'], $dirname);
 				}
 			}
 			if ($manifestsCnt == 1) {
@@ -106,6 +101,64 @@ function guessName($release, &$type)
 		}
 	} else { // tar.gz
 		$type = 'tar';
+		try {
+			$tar = new PharData($filestorePath);
+		} catch (UnexpectedValueException $e) {
+			return false;
+		}
+		$tarIterator = new RecursiveIteratorIterator($tar);
+
+		$prefix = 'phar://' . $filestorePath . '/';
+		$manifestsCnt = 0;
+		$dirname = null;
+		$tarIterator->rewind();
+		/**
+		 * @var $file PharFileInfo
+		 */
+//		foreach ($tarIterator as $key => $file) {
+		while($tarIterator->valid()) {
+			try {
+				$file = $tarIterator->current();
+			} catch (RuntimeException $e) {
+				$tarIterator->next();
+				continue;
+			}
+
+			$path = substr($file->getPathname(), strlen($prefix));
+			if ($file->getFilename() == 'manifest.xml') {
+				$dirname = trim(pathinfo($path, PATHINFO_DIRNAME), '/\\');
+				if (!empty($dirname) && $dirname !== '.' && strpos($dirname, '/') === false && strpos($dirname, '\\') === false) {
+					$resultDir = $dirname;
+					if (preg_match('#^([^\-]+)\-(.+)\-([0-9a-fA-F]{7}|master)$#', $resultDir, $matches)) {
+						$resultDir = $matches[2];
+					} elseif (strpos($resultDir, '-' . $release->version) === strlen($resultDir)-strlen('-' . $release->version)) {
+						// cut away version appended by git
+						$resultDir = substr($resultDir, 0, strlen($resultDir)-strlen('-' . $release->version));
+					}
+					$manifestsCnt++;
+					$content = $file->getContent();
+					try {
+						$manifest = new ElggPluginManifest($content);
+						$manifestArr = $manifest->getManifest();
+						if (isset($manifestArr['id'])) {
+							$resultId = $manifestArr['id'];
+						}
+					} catch (Exception $e) {
+					}
+				}
+			}
+
+			$tarIterator->next();
+		}
+		if ($manifestsCnt == 1) {
+			if ($resultId) {
+				return $resultId;
+			} else {
+				return $resultDir;
+			}
+		} else {
+			return false; //no manifests or too many manifests in proper nesting
+		}
 		return false;
 	}
 }

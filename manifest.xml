@@ -12,4 +12,12 @@
 		<type>elgg_release</type>
 		<version>1.8</version>
 	</requires>
+	<requires>
+		<type>php_extension</type>
+		<name>zip</name>
+	</requires>
+	<requires>
+		<type>php_extension</type>
+		<name>phar</name>
+	</requires>
 </plugin_manifest>
